@@ -7,24 +7,22 @@ nseed = randint(1,1000)  # Random integer to define the seed.
 # octaves (float) : number of sub rectangles in each [0, 1] range.
 # seed : specific seed with which you want to initialize random generator.
 
-xpix, ypix = 1200, 1200  # Definition in pixels of the perlin map.
+xpix, ypix = 600, 600  # Definition in pixels of the perlin map.
 # Square maps are preferred.
 
 noise = PerlinNoise(octaves = noct, seed = nseed)
 pic = [[noise([i/xpix, j/ypix]) for j in range(xpix)] for i in range(ypix)]
 
-binarpic = []
-for row in pic:  # Convert smooth map into binary map, using a threshold of 0.7.
+topopic = []
+for row in pic:  # Convert smooth map into topographic map, using a threshold of 0.65.
     maxi, mini = max(row), min(row)
-    binarow = [round((row[i]-mini)/(maxi-mini)-0.2) for i in range(len(row))]
-    binarpic += [binarow,]
+    binarow = []
+    for i in range(len(row)) :
+        val = (row[i]-mini)/(maxi-mini)
+        binarow += [max(val,int(val + 0.4)),]
+    topopic += [binarow,]
 
-#plt.imshow(pic, cmap='gray')
-#plt.title(f"Perlin noise generated with seed {nseed}")
-
-plt.imshow(binarpic, cmap='gray')
-plt.title(f"Binary map generated from perlin noise with seed {nseed}")
+plt.imshow(topopic, cmap='gray')
+plt.title(f"Topographic map generated from perlin noise with seed {nseed}")
 
 plt.show()
-
-#print(f"Perlin noise generated with seed {nseed}")
