@@ -16,7 +16,7 @@ xpix, ypix = pix, pix  # Definition in pixels of the perlin map.
 zrat = 1/30  # Vertical dimension of the map in relation to the horizontal dimension.
 dens = 0.3  # Density ratio of the map. The lower the density, the fewer the obstacles.
 # 0.2:Sparse ; 0.3:Medium ; 0.4:Dense
-resize = 1/(3*(1-dens))  # The height difference of the accessible surface will always be equal to one third of the total height of the card.
+resize = 1/(3*(1-dens))  # The height difference of the accessible surface will always be equal to one third of the total height of the map.
 
 noise = PerlinNoise(octaves = noct, seed = nseed)
 #pic = [[noise([i/xpix, j/ypix]) for j in range(xpix)] for i in range(ypix)]
@@ -45,4 +45,8 @@ fig.update_layout(
     )
 )
 
+plt.imshow(pic, cmap='gray')
+plt.title(f"Topographic map generated from perlin noise with seed {nseed}")
+plt.gca().invert_yaxis()
+plt.show()
 fig.show(renderer="browser")
