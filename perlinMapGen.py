@@ -73,14 +73,20 @@ def disp3Dmap(pmap, seed, height = 20):
 class PerlinMap():
     
     def __init__(self, size = 600, topography = False, density = "medium", height = 20):
-        self.size = size
-        self.height = height
-        self.zrat = height/size
-        self.denstag = density
-        (self.perlin, self.seed) = generPerlin(size)
-        self.pmap = perlin2map(self.perlin, topography, density)
+        self.__size = size
+        self.__height = height
+        self.__zrat = height/size
+        self.__denstag = density
+        (self.__perlin, self.__seed) = generPerlin(size)
+        self.__pmap = perlin2map(self.__perlin, topography, density)
     
     def display(self):
-        self.fig2D = disp2Dmap(self.pmap, self.seed)
-        disp3Dmap(self.pmap, self.seed, self.height)
+        self.__fig2D = disp2Dmap(self.__pmap, self.__seed)
+        disp3Dmap(self.__pmap, self.__seed, self.__height)
         
+    def outperlin(self):
+        fig = plt.figure()
+        plt.imshow(self.__perlin, cmap = 'gray')
+        plt.title(f"Perlin noise generated with seed {self.__seed}.")
+        plt.gca().invert_yaxis()
+        plt.show()
