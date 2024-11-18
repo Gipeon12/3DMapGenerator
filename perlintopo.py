@@ -1,3 +1,9 @@
+# Author: Noé Pigret
+# Date: 11/13/2024
+# Description: This program will generate a topographic map from perlin noise,
+# featuring obstacles (level = 1) and an uneven ground (elevation differences).
+
+
 import matplotlib.pyplot as plt
 from perlin_noise import PerlinNoise
 from random import randint

@@ -1,3 +1,9 @@
+# Author: Noé Pigret
+# Date: 11/13/2024
+# Description: This program will generate a binary map from perlin noise,
+# featuring obstacles (level = 1) and a flat floor (level = 0).
+
+
 import matplotlib.pyplot as plt
 from perlin_noise import PerlinNoise
 from random import randint
@@ -7,7 +13,7 @@ nseed = randint(1,1000)  # Random integer to define the seed.
 # octaves (float) : number of sub rectangles in each [0, 1] range.
 # seed : specific seed with which you want to initialize random generator.
 
-xpix, ypix = 1200, 1200  # Definition in pixels of the perlin map.
+xpix, ypix = 200, 200  # Definition in pixels of the perlin map.
 # Square maps are preferred.
 
 noise = PerlinNoise(octaves = noct, seed = nseed)

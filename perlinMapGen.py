@@ -1,3 +1,10 @@
+# Author: Noé Pigret
+# Date: 11/15/2024
+# Description: This program will help the user to generate a 3D map featuring perlin noise,
+# from a set of parameters given in the constructor of a dedicated class. Different options are
+# available as well as 2D and 3D outputs.
+
+
 from perlin_noise import PerlinNoise
 import matplotlib.pyplot as plt
 import random as rd
@@ -5,10 +12,30 @@ import numpy as np
 import plotly.graph_objects as go
 
 
+# This dictionary lists all possible options for choosing map density.
+# The floating numbers are offsets used in a call of the int() function. 
 denstags = {"sparse":0.2, "medium":0.3, "dense":0.4}
 
 
 def generPerlin(size = 600):
+    """
+    This function will generate a large perlin noise as a square map from a given size.
+    To avoid any spatial repetition in larger maps, two perlin noise generated with 
+    different seeds are superposed by sum, with one of them being transposed.
+
+    Parameters
+    ----------
+    size : INTEGER, optional
+        Size of the square map in pixels. The default value is 600.
+
+    Returns
+    -------
+    perlin : LIST
+        2D List of values of each pixel.
+    seed : STRING
+        Combined seed written from the seeds of the two superposed perlin noise,
+        with special formatting "111t2222".
+    """
     s1 = rd.randint(1, 1000)
     s2 = rd.randint(1001, 2000) # We ensure there is no chanche for the seeds to be the same.
     noise1 = PerlinNoise(octaves = 20, seed = s1)
@@ -22,6 +49,27 @@ def generPerlin(size = 600):
 
 
 def perlin2map(perlin, topography = False, density = "medium"):
+    """
+    This function will convert a given perlin noise into a 2D map,
+    taking into account topography (presence or not of irregular ground)
+    and density (more or fewer obstacles).
+
+    Parameters
+    ----------
+    perlin : LIST
+        2D List of values of each pixel.
+    topography : BOOLEAN, optional
+        Boolean indicating whether the output should include uneven ground.
+        The default value is False (binary map).
+    density : STRING, optional
+        Density option label (low = "sparse", "medium", high = "dense").
+        The default option is "medium".
+
+    Returns
+    -------
+    pmap : LIST
+        2D List of values of each pixel after conversion and scaling between 0 and 1.
+    """
     pmap = []
     dens = denstags[density]
     if topography:
@@ -73,6 +121,27 @@ def disp3Dmap(pmap, seed, height = 20):
 class PerlinMap():
     
     def __init__(self, size = 600, topography = False, density = "medium", height = 20):
+        """
+        Calling the constructor will automatically generate a map based on perlin noise
+        from all the given arguments.
+
+        Parameters
+        ----------
+        size : INTEGER, optional
+            Size of the square map in pixels. The default value is 600.
+        topography : BOOLEAN, optional
+            Boolean indicating whether the output should include uneven ground.
+            The default value is False (binary map).
+        density : STRING, optional
+            Density option label (low = "sparse", "medium", high = "dense").
+            The default option is "medium".
+        height : INTEGER, optional
+            Height of the 3D map in pixel units. The default value is 20.
+
+        Returns
+        -------
+        None.
+        """
         self.__size = size
         self.__height = height
         self.__zrat = height/size

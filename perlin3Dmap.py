@@ -1,3 +1,9 @@
+# Author: Noé Pigret
+# Date: 11/14/2024
+# Description: This program will generate a topographic map as in "perlintopo.py",
+# and will display a convenient 3D view of it in the browser.
+
+
 import matplotlib.pyplot as plt
 from perlin_noise import PerlinNoise
 from random import randint

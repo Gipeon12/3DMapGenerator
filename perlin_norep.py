@@ -1,4 +1,6 @@
-# This program is designed to generate a larger random map without any spatial
+# Author: Noé Pigret
+# Date: 11/14/2024
+# Description: This program is designed to generate a larger random map without any spatial
 # repetition. Two large perlin maps with different seeds are superposed by sum,
 # with one of them being transposed.
 
