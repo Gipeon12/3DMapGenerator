@@ -146,6 +146,7 @@ class PerlinMap():
         self.__height = height
         self.__zrat = height/size
         self.__denstag = density
+        self.__topo = "ON" if topography else "OFF"
         (self.__perlin, self.__seed) = generPerlin(size)
         self.__pmap = perlin2map(self.__perlin, topography, density)
     
@@ -159,3 +160,8 @@ class PerlinMap():
         plt.title(f"Perlin noise generated with seed {self.__seed}.")
         plt.gca().invert_yaxis()
         plt.show()
+        return fig
+        
+    def __str__(self):
+        return f"Map generated with seed {self.__seed}.\nSize (pixels): {self.__size}\nHeight (px-units): {self.__height}\nDensity: {self.__denstag}\nTopography: {self.__topo}"
+    
