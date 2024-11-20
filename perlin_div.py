@@ -6,6 +6,7 @@
 import matplotlib.pyplot as plt
 from perlin_noise import PerlinNoise
 import random as rd
+import numpy as np
 
 def normalMap(rawmap):
     maxima = [max(row) for row in rawmap]
@@ -17,27 +18,19 @@ def normalMap(rawmap):
         normalmap += [normalrow,]
     return normalmap
 
-def diverMap(main, div):
-    divmap = []
-    for j in range(len(main)):
-        divrow = []
-        for i in range(len(main[j])):
-            divrow += [main[j][i]*div[j][i],]
-        divmap += [divrow,]
-    return divmap
+def exponMap(normap):
+    expmap = []
+    for row in normap:
+        exprow = [(1+np.tanh(10*val-5))/2 for val in row]
+        expmap += [exprow,]
+    return expmap
 
-def binarMap(main, offset):
-    binmap = []
-    for row in main:
-        binmap += [[round(val-offset) for val in row],]
-    return binmap
-
-def divBinMap(main, div):
+def divBinMap(main, div, dens):
     divbin = []
-    for j in range(len(main)):
+    for i in range(len(main)):
         divbinrow = []
-        for i in range(len(main[j])):
-            divbinrow += [int(main[j][i]-(div[j][i]-0.5)),]
+        for j in range(len(main[i])):
+            divbinrow += [int((main[i][j]+dens)*div[i][j]),]
         divbin += [divbinrow,]
     return divbin
 
@@ -57,21 +50,18 @@ perlin = [[subpic[i][j]+suppic[j][i] for j in range(size)] for i in range(size)]
 
 normperlin = normalMap(perlin)
 normdiv = normalMap(divpic)
-#divmap = diverMap(normperlin,normdiv)
-#binmap = binarMap(divmap,0)
-divbin = divBinMap(normperlin,normdiv)
+expdiv = exponMap(normdiv)
+divbmap = divBinMap(normperlin,expdiv,0.4)
 
-fig, axs = plt.subplots(1, 3)
+fig, axs = plt.subplots(2, 2)
 
-axs[0].imshow(normperlin, cmap='gray')
-axs[0].set_title(f"Perlin map of seed {s1}t{s2}.")
-axs[1].imshow(normdiv, cmap='gray')
-axs[1].set_title(f"Density divergence map of seed {s3}.")
-axs[2].imshow(divbin, cmap='gray')
-axs[2].set_title("Binarized map with density divergence.")
-#axs[1,0].imshow(divmap, cmap='gray')
-#axs[1,0].set_title("Perlin map with density divergence.")
-#axs[1,1].imshow(binmap, cmap='gray')
-#axs[1,1].set_title("Binarized map with density divergence.")
+axs[0,0].imshow(normperlin, cmap='gray')
+axs[0,0].set_title(f"Perlin map of seed {s1}t{s2}.")
+axs[0,1].imshow(normdiv, cmap='gray')
+axs[0,1].set_title(f"Density divergence map of seed {s3}.")
+axs[1,0].imshow(expdiv, cmap='gray')
+axs[1,0].set_title("Divergence map with exponentiated values.")
+axs[1,1].imshow(divbmap, cmap='gray')
+axs[1,1].set_title("Binarized map with density divergence.")
 
 plt.show()
