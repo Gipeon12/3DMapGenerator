@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import random as rd
 import numpy as np
 import plotly.graph_objects as go
+import trimesh
 
 
 # This dictionary lists all possible options for choosing map density.
@@ -83,7 +84,7 @@ def generPerlin(size = 600):
         2D List of values of each pixel.
     seed : STRING
         Combined seed written from the seeds of the two superposed perlin noise,
-        with special formatting "111t2222".
+        with special formatting "000t1111".
     """
     s1 = rd.randint(1, 1000)
     s2 = rd.randint(1001, 2000) # We ensure there is no chanche for the seeds to be the same.
@@ -124,13 +125,15 @@ def perlin2map(perlin, density = "medium", topography = False, disparity = False
     """
     dens = denstags[density] if density in denstags else density
     nper = normalize(perlin)
+    fseed = None
     efil = None
     if disparity:
         size = len(perlin)
         s = rd.randint(2001,3000)
         noise = PerlinNoise(octaves = 2, seed = s)
         filt = [[noise([i/size, j/size]) for j in range(size)] for i in range(size)]
-        print(f"Density filter map generated with seed {s}.")
+        fseed = f"f{s}"
+        print(f"Density filter map generated with seed {fseed}.")
         nfil = normalize(filt)
         efil = exponentiate(nfil)
     if topography:
@@ -139,7 +142,7 @@ def perlin2map(perlin, density = "medium", topography = False, disparity = False
     else:
         pmap = binarize(nper, dens, efil)
         print(f"Binary map generated from perlin noise with density set on: {density}.")
-    return pmap
+    return pmap, fseed
 
 
 def disp2Dmap(pmap, seed):
@@ -164,6 +167,60 @@ def disp3Dmap(pmap, seed, height = 20):
         )
     )
     fig.show(renderer = "browser")
+
+
+def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
+    """
+    This function will export the given map as a 3D object, with a meaningful name inherited
+    from the construction parameters.
+
+    Parameters
+    ----------
+    pmap : LIST
+        2D List of values of each pixel after conversion and scaling between 0 and 1.
+    seed : STRING
+        Combined seed written from the seeds of the two superposed perlin noise and
+        the eventual density filter, with special formatting "000t1111f2222".
+    height : INTEGER, optional
+        Height of the 3D map in pixel units. The default value is 20.
+    xfile : STRING, optional
+        Exported object format, typically "OBJ" or "COLLADA". The default value is "OBJ".
+
+    Returns
+    -------
+    None.
+
+    """
+    heightmap = np.array(pmap)*height
+    size = heightmap.shape[0]
+    x = np.linspace(0, size, size)
+    y = np.linspace(0, size, size)
+    x, y = np.meshgrid(x, y)
+    vertices = np.column_stack((x.ravel(), y.ravel(), heightmap.ravel()))
+    # Generate the faces of the grid.
+    faces = []
+    rows, cols = heightmap.shape
+    for i in range(rows - 1):
+        for j in range(cols - 1):
+            # Indices of vertices in the flattened matrix.
+            idx1 = i * cols + j
+            idx2 = i * cols + (j + 1)
+            idx3 = (i + 1) * cols + j
+            idx4 = (i + 1) * cols + (j + 1)
+            # Two triangles per cell.
+            faces.append([idx1, idx2, idx3])
+            faces.append([idx2, idx4, idx3])
+    faces = np.array(faces)
+    # Create a mesh.
+    mesh = trimesh.Trimesh(vertices = vertices, faces = faces)
+    # Export to OBJ format (or COLLADA with .dae).
+    filename = f"mesh{seed}_h{height}"
+    filename += ".dae" if xfile == "COLLADA" else ".obj"
+    try:
+        mesh.export(filename)
+        print(f"Mesh exported with name {filename}.")
+    except:
+        print("Unable to export object.")
 
 
 class PerlinMap():
@@ -197,14 +254,21 @@ class PerlinMap():
         self.__height = height
         self.__zrat = height/size
         self.__dens = density
-        self.__topo = "ON" if topography else "OFF"
-        self.__disp = "ON" if disparity else "OFF"
+        self.__topo = topography
+        self.__disp = disparity
         (self.__perlin, self.__seed) = generPerlin(size)
-        self.__pmap = perlin2map(self.__perlin, density, topography, disparity)
+        (self.__pmap, self.__fseed) = perlin2map(self.__perlin, density, topography, disparity)
     
     def display(self):
-        self.__fig2D = disp2Dmap(self.__pmap, self.__seed)
-        disp3Dmap(self.__pmap, self.__seed, self.__height)
+        seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
+        seed += "T" if self.__topo else "F"
+        self.__fig2D = disp2Dmap(self.__pmap, seed)
+        disp3Dmap(self.__pmap, seed, self.__height)
+    
+    def exportmesh(self, xfile = "OBJ"):
+        seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
+        seed += "T" if self.__topo else "F"
+        exportMesh(self.__pmap, seed, self.__height, xfile)
         
     def outperlin(self):
         fig = plt.figure()
@@ -215,5 +279,7 @@ class PerlinMap():
         return fig
         
     def __str__(self):
-        return f"Map generated with seed {self.__seed}.\nSize (pixels): {self.__size}\nHeight (px-units): {self.__height}\nDensity: {self.__dens}\nTopography: {self.__topo}\nDisparity: {self.__disp}"
+        topo = "ON" if self.__topo else "OFF"
+        disp = "ON" if self.__disp else "OFF"
+        return f"Map generated with seed {self.__seed}.\nSize (pixels): {self.__size}\nHeight (px-units): {self.__height}\nDensity: {self.__dens}\nTopography: {topo}\nDisparity: {disp}"
     
