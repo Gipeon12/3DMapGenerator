@@ -6,17 +6,26 @@ import plotly.express as px
 import numpy as np
 from perlin import generatePerlin
 import pandas as pd
-# TODO: Make a DASH that displays perlin map
 initialSeed = None
 initialOctave = None # cannot be a non-positive num
 initialX = 100
 initialY = 100
 
-
+# TODO: update to new Perlin Generator
 perlinMapGen = generatePerlin(initialSeed, initialOctave)
 print("Map has been generated")
 fig = px.imshow(perlinMapGen, color_continuous_scale='gray') # assigns the perlin map
-fig.update_layout(coloraxis_showscale=False) # Remove gradient bar on the side, not needed
+fig.update_layout(
+    # Set Title of Graph
+    title = {
+        'text': "Binarized Sum Map",
+        'y' : 0.95,
+        'x' : 0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    },
+    coloraxis_showscale=False # Remove gradient bar on the side, not needed
+)
 
 app = Dash()
 
@@ -67,7 +76,19 @@ app.layout = html.Div([
                     placeholder="Enter Y Dimension", debounce=True, style={'width': '150px'}
                 )
             ], style={'display': 'flex', 'flexDirection': 'column', 'marginBottom': '10px'}),
+
+            html.Div([
+                html.P(
+                    '''
+                    Note: X and Y Dimension should generally be equal in value
+                    for square maps are preferred. 
+                    ''',
+                    style = {'width': '150px', 'marginTop': '10px'}
+                )
+            ], style={'display': 'flex', 'flexDirection': 'column', 'marginBottom': '10px'}),
+
         ], style={'marginRight': '20px'}),  # Space between inputs and graph
+
 
         # Graph Container
         html.Div([
@@ -92,7 +113,17 @@ app.layout = html.Div([
 def updateGraph(seed, noct, xDim, yDim):
     updatedPerlinMap = generatePerlin(seed, noct, xDim, yDim) # Call the function from perlin.py
     fig = px.imshow(updatedPerlinMap, color_continuous_scale='gray')
-    fig.update_layout(coloraxis_showscale=False)
+    fig.update_layout(
+        # Set Title of Graph
+        title={
+            'text': "Binarized Sum Map",
+            'y': 0.95,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        },
+        coloraxis_showscale=False  # Remove gradient bar on the side, not needed
+    )
     #print("Map Updated!") # Debug print statement
     return fig
 
