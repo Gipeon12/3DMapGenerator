@@ -2,7 +2,7 @@
 # Date: 11/15/2024
 # Description: This program will help the user to generate a 3D map featuring perlin noise,
 # from a set of parameters given in the constructor of a dedicated class. Different options are
-# available as well as 2D and 3D outputs.
+# available as well as 2D/3D outputs and mesh exportation.
 
 
 from perlin_noise import PerlinNoise
@@ -11,6 +11,7 @@ import random as rd
 import numpy as np
 import plotly.graph_objects as go
 import trimesh
+import os
 
 
 # This dictionary lists all possible options for choosing map density.
@@ -169,10 +170,60 @@ def disp3Dmap(pmap, seed, height = 20):
     fig.show(renderer = "browser")
 
 
-def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
+def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
     """
-    This function will export the given map as a 3D object, with a meaningful name inherited
-    from the construction parameters.
+    This function is meant to write a basic SDF file for a given object.
+
+    Parameters
+    ----------
+    directory : STRING
+        DESCRIPTION.
+    object_name : STRING
+        Name used to save the exported object.
+    model_stl_path : STRING
+        Path to find the STL file of the exported object.
+    scale_factor : FLOAT, optional
+        Value of the scaling coefficient used for exportation. The default value is 0.1.
+
+    Returns
+    -------
+    None.
+
+    """
+    scale_factor = str(round(scale_factor, 3))
+    sdf_model_file_text = \
+    f"""<?xml version='1.0'?>
+            <sdf version="1.6">
+                <model name="{object_name}">
+                    <static>1</static>
+                    <link name="link">
+                        <visual name="visual">
+                            <geometry>
+                                <mesh>
+                                    <uri>{model_stl_path}</uri>
+                                    <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
+                                </mesh>
+                            </geometry>
+                        </visual>
+                        <collision name="collision">
+                            <geometry>
+                                <mesh>
+                                    <uri>{model_stl_path}</uri>
+                                    <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
+                                </mesh>
+                            </geometry>
+                        </collision>
+                    </link>
+                </model>
+            </sdf>"""
+    with open(f"{directory}/{object_name}.sdf", "w") as f:
+        f.write(sdf_model_file_text)
+
+
+def exportMesh(pmap, seed, height = 20, scale_factor = 1.0):
+    """
+    This function will export the given map as a 3D object (STL file), with a meaningful name inherited
+    from the construction parameters. It will also write a SDF file.
 
     Parameters
     ----------
@@ -183,14 +234,17 @@ def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
         the eventual density filter, with special formatting "000t1111f2222".
     height : INTEGER, optional
         Height of the 3D map in pixel units. The default value is 20.
-    xfile : STRING, optional
-        Exported object format, typically "OBJ" or "COLLADA". The default value is "OBJ".
+    scale_factor : FLOAT, optional
+        Value of the scaling coefficient used for exportation. The default value is 0.1.
 
     Returns
     -------
     None.
 
     """
+    filename = f"mesh{seed}_h{height}"
+    # Create a mesh.
+    print(f"Generating mesh with name {filename}...")
     heightmap = np.array(pmap)*height
     size = heightmap.shape[0]
     x = np.linspace(0, size, size)
@@ -211,16 +265,40 @@ def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
             faces.append([idx1, idx2, idx3])
             faces.append([idx2, idx4, idx3])
     faces = np.array(faces)
-    # Create a mesh.
     mesh = trimesh.Trimesh(vertices = vertices, faces = faces)
-    # Export to OBJ format (or COLLADA with .dae).
-    filename = f"mesh{seed}_h{height}"
-    filename += ".dae" if xfile == "COLLADA" else ".obj"
-    try:
-        mesh.export(filename)
-        print(f"Mesh exported with name {filename}.")
+    # Generate a folder to store the mesh.
+    print("Generating a folder to save the files.")
+    # Generate a folder with the same name as the input file, without its extension.
+    currentPathGlobal = os.getcwd()
+    directory = currentPathGlobal + "/" + filename.split(".")[0]
+    if not os.path.exists(directory):
+        os.makedirs(directory) 
+    print("\nApplying scale factor...")
+    mesh.apply_scale(scaling = scale_factor)
+    print("Merging vertices closer than a pre-set constant...")
+    mesh.merge_vertices()
+    print("Removing duplicate faces...")
+    mesh.update_faces(mesh.unique_faces())
+    print("Making the mesh watertight...")
+    trimesh.repair.fill_holes(mesh)
+    trimesh.repair.fix_normals(mesh)
+    print("\nMesh volume: {}".format(mesh.volume))
+    print("Mesh convex hull volume: {}".format(mesh.convex_hull.volume))
+    print("Mesh bounding box volume: {}".format(mesh.bounding_box.volume))
+    try: 
+        print("\nGenerating the STL mesh file...")
+        trimesh.exchange.export.export_mesh(
+            mesh = mesh,
+            file_obj = directory + f"/{filename}.stl",
+            file_type = "stl")
+        print("Generating the SDF file...")
+        WriteSDF(
+            directory = directory,
+            object_name = filename,
+            model_stl_path = directory + f"/{filename}.stl",
+            scale_factor = 1.0)
     except:
-        print("Unable to export object.")
+        print("\nUnable to export object.")
 
 
 class PerlinMap():
@@ -265,10 +343,10 @@ class PerlinMap():
         self.__fig2D = disp2Dmap(self.__pmap, seed)
         disp3Dmap(self.__pmap, seed, self.__height)
     
-    def exportmesh(self, xfile = "OBJ"):
+    def exportmesh(self, scale_factor = 1.0):
         seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
         seed += "T" if self.__topo else "F"
-        exportMesh(self.__pmap, seed, self.__height, xfile)
+        exportMesh(self.__pmap, seed, self.__height, scale_factor)
         
     def outperlin(self):
         fig = plt.figure()
