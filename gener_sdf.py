@@ -1,6 +1,6 @@
 # Author: Noé Pigret
 # Date: 12/2/2024
-# Description: This program is designed to export a mesh file as STL and write
+# Description: This program is designed to export a mesh file as DAE (Collada) and write
 # a SDF file for a random map generated from Perlin noise.
 # Inspired by https://github.com/heap-chist-era/stl2sdf
 
@@ -9,7 +9,7 @@ import trimesh
 import numpy as np
 
 
-def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
+def WriteSDF(directory, object_name, model_mesh_path, scale_factor = 1.0):
     scale_factor = str(round(scale_factor, 3))
     sdf_model_file_text = \
     f"""<?xml version='1.0'?>
@@ -20,7 +20,7 @@ def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
                         <visual name="visual">
                             <geometry>
                                 <mesh>
-                                    <uri>{model_stl_path}</uri>
+                                    <uri>{model_mesh_path}</uri>
                                     <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
                                 </mesh>
                             </geometry>
@@ -28,7 +28,7 @@ def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
                         <collision name="collision">
                             <geometry>
                                 <mesh>
-                                    <uri>{model_stl_path}</uri>
+                                    <uri>{model_mesh_path}</uri>
                                     <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
                                 </mesh>
                             </geometry>
@@ -41,11 +41,11 @@ def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
 
 
 
-def exportMesh(pmap, seed, height = 20, scaling_factor = 1.0):
+def exportMesh(pmap, seed, height=20, scale_factor=1.0):
     filename = f"mesh{seed}_h{height}"
-    # Create a mesh.
     print(f"Generating mesh with name {filename}...")
-    heightmap = np.array(pmap)*height
+    # Create a mesh.
+    heightmap = np.array(pmap) * height
     size = heightmap.shape[0]
     x = np.linspace(0, size, size)
     y = np.linspace(0, size, size)
@@ -65,17 +65,16 @@ def exportMesh(pmap, seed, height = 20, scaling_factor = 1.0):
             faces.append([idx1, idx2, idx3])
             faces.append([idx2, idx4, idx3])
     faces = np.array(faces)
-    mesh = trimesh.Trimesh(vertices = vertices, faces = faces)
-    # Generate a folder to store the mesh.
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    # Generate a folder to store the files.
     print("Generating a folder to save the files.")
     # Generate a folder with the same name as the input file, without its extension.
-    currentPathGlobal = os.getcwd()
-    directory = currentPathGlobal + "/" + filename.split(".")[0]
+    current_path = os.getcwd()
+    directory = os.path.join(current_path, filename)
     if not os.path.exists(directory):
         os.makedirs(directory)
-    
     print("\nApplying scale factor...")
-    mesh.apply_scale(scaling = scaling_factor)
+    mesh.apply_scale(scaling=scale_factor)
     print("Merging vertices closer than a pre-set constant...")
     mesh.merge_vertices()
     print("Removing duplicate faces...")
@@ -86,15 +85,16 @@ def exportMesh(pmap, seed, height = 20, scaling_factor = 1.0):
     print("\nMesh volume: {}".format(mesh.volume))
     print("Mesh convex hull volume: {}".format(mesh.convex_hull.volume))
     print("Mesh bounding box volume: {}".format(mesh.bounding_box.volume))
-    
-    print("\nGenerating the STL mesh file...")
+    print("\nGenerating the DAE mesh file...")
+    dae_file_path = os.path.join(directory, f"{filename}.dae")
     trimesh.exchange.export.export_mesh(
-        mesh = mesh,
-        file_obj = directory + f"/{filename}.stl",
-        file_type = "stl")
+        mesh=mesh,
+        file_obj=dae_file_path,
+        file_type="dae")
+    print(f"Mesh exported successfully to {dae_file_path}")
     print("Generating the SDF file...")
     WriteSDF(
-        directory = directory,
-        object_name = filename,
-        model_stl_path = directory + f"/{filename}.stl",
-        scale_factor = 1.0)
+        directory=directory,
+        object_name=filename,
+        model_mesh_path=dae_file_path,
+        scale_factor=scale_factor)

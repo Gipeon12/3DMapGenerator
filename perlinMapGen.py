@@ -170,7 +170,7 @@ def disp3Dmap(pmap, seed, height = 20):
     fig.show(renderer = "browser")
 
 
-def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
+def WriteSDF(directory, object_name, model_mesh_path, scale_factor = 1.0):
     """
     This function is meant to write a basic SDF file for a given object.
 
@@ -200,7 +200,7 @@ def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
                         <visual name="visual">
                             <geometry>
                                 <mesh>
-                                    <uri>{model_stl_path}</uri>
+                                    <uri>{model_mesh_path}</uri>
                                     <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
                                 </mesh>
                             </geometry>
@@ -208,7 +208,7 @@ def WriteSDF(directory, object_name, model_stl_path, scale_factor = 1.0):
                         <collision name="collision">
                             <geometry>
                                 <mesh>
-                                    <uri>{model_stl_path}</uri>
+                                    <uri>{model_mesh_path}</uri>
                                     <scale>{scale_factor} {scale_factor} {scale_factor}</scale>
                                 </mesh>
                             </geometry>
@@ -243,9 +243,9 @@ def exportMesh(pmap, seed, height = 20, scale_factor = 1.0):
 
     """
     filename = f"mesh{seed}_h{height}"
-    # Create a mesh.
     print(f"Generating mesh with name {filename}...")
-    heightmap = np.array(pmap)*height
+    # Create a mesh.
+    heightmap = np.array(pmap) * height
     size = heightmap.shape[0]
     x = np.linspace(0, size, size)
     y = np.linspace(0, size, size)
@@ -266,15 +266,15 @@ def exportMesh(pmap, seed, height = 20, scale_factor = 1.0):
             faces.append([idx2, idx4, idx3])
     faces = np.array(faces)
     mesh = trimesh.Trimesh(vertices = vertices, faces = faces)
-    # Generate a folder to store the mesh.
+    # Generate a folder to store the files.
     print("Generating a folder to save the files.")
     # Generate a folder with the same name as the input file, without its extension.
-    currentPathGlobal = os.getcwd()
-    directory = currentPathGlobal + "/" + filename.split(".")[0]
+    current_path = os.getcwd()
+    directory = os.path.join(current_path, filename)
     if not os.path.exists(directory):
-        os.makedirs(directory) 
+        os.makedirs(directory)
     print("\nApplying scale factor...")
-    mesh.apply_scale(scaling = scale_factor)
+    mesh.apply_scale(scaling=scale_factor)
     print("Merging vertices closer than a pre-set constant...")
     mesh.merge_vertices()
     print("Removing duplicate faces...")
@@ -285,18 +285,20 @@ def exportMesh(pmap, seed, height = 20, scale_factor = 1.0):
     print("\nMesh volume: {}".format(mesh.volume))
     print("Mesh convex hull volume: {}".format(mesh.convex_hull.volume))
     print("Mesh bounding box volume: {}".format(mesh.bounding_box.volume))
-    try: 
-        print("\nGenerating the STL mesh file...")
+    print("\nGenerating the DAE mesh file...")
+    dae_file_path = os.path.join(directory, f"{filename}.dae")
+    try:
         trimesh.exchange.export.export_mesh(
             mesh = mesh,
-            file_obj = directory + f"/{filename}.stl",
-            file_type = "stl")
+            file_obj = dae_file_path,
+            file_type = "dae")
+        print(f"Mesh exported successfully to {dae_file_path}")
         print("Generating the SDF file...")
         WriteSDF(
             directory = directory,
             object_name = filename,
-            model_stl_path = directory + f"/{filename}.stl",
-            scale_factor = 1.0)
+            model_mesh_path = dae_file_path,
+            scale_factor = scale_factor)
     except:
         print("\nUnable to export object.")
 
