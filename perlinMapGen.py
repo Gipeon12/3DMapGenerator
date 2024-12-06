@@ -2,7 +2,11 @@
 # Date: 11/15/2024
 # Description: This program will help the user to generate a 3D map featuring perlin noise,
 # from a set of parameters given in the constructor of a dedicated class. Different options are
-# available as well as 2D and 3D outputs.
+# available as well as 2D/3D outputs and mesh exportation.
+
+# Edited by Jose Martinez-Ponce
+# Date: 12/6/2024
+# Purpose: Allow it function within the Dash App
 
 
 from perlin_noise import PerlinNoise
@@ -11,6 +15,7 @@ import random as rd
 import numpy as np
 import plotly.graph_objects as go
 import trimesh
+import os
 
 
 # This dictionary lists all possible options for choosing map density.
@@ -67,7 +72,7 @@ def formalize(norMap, dens, filt = None):
     return forMap
 
 
-def generPerlin(size = 600):
+def generPerlin(userSeed1 = None, userSeed2 = None, userOct1 = 20, userOct2 = 20, size = 600):
     """
     This function will generate a large perlin noise as a square map from a given size.
     To avoid any spatial repetition in larger maps, two perlin noise generated with 
@@ -86,16 +91,22 @@ def generPerlin(size = 600):
         Combined seed written from the seeds of the two superposed perlin noise,
         with special formatting "000t1111".
     """
-    s1 = rd.randint(1, 1000)
-    s2 = rd.randint(1001, 2000) # We ensure there is no chanche for the seeds to be the same.
-    noise1 = PerlinNoise(octaves = 20, seed = s1)
-    noise2 = PerlinNoise(octaves = 20, seed = s2)
+
+    if userSeed1 is None:
+        userSeed1 = rd.randint(1,1000)
+    if userSeed2 is None:
+        userSeed2 = rd.randint(1001, 2000)
+
+   # s1 = rd.randint(1, 1000)
+   # s2 = rd.randint(1001, 2000) # We ensure there is no chance for the seeds to be the same.
+    noise1 = PerlinNoise(octaves = userOct1, seed = userSeed1)
+    noise2 = PerlinNoise(octaves = userOct2, seed = userSeed2)
     subpic = [[noise1([i/size, j/size]) for j in range(size)] for i in range(size)]
     suppic = [[noise2([i/size, j/size]) for j in range(size)] for i in range(size)]
     perlin = [[subpic[i][j]+suppic[j][i] for j in range(size)] for i in range(size)]
-    seed = f"{s1}t{s2}"
+    seed = f"{userSeed1}t{userSeed2}"
     print(f"Perlin noise of size {size} generated with seed {seed}.")
-    return perlin, seed
+    return np.array(perlin), seed
 
 
 def perlin2map(perlin, density = "medium", topography = False, disparity = False):
@@ -166,13 +177,66 @@ def disp3Dmap(pmap, seed, height = 20):
             zaxis = dict(range = [0, len(pmap)], visible = False)
         )
     )
-    fig.show(renderer = "browser")
+    return fig
 
 
-def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
+def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
     """
-    This function will export the given map as a 3D object, with a meaningful name inherited
-    from the construction parameters.
+    This function is meant to write a basic SDF file for a given object.
+
+    Parameters
+    ----------
+    directory : STRING
+        DESCRIPTION.
+    object_name : STRING
+        Name used to save the exported object.
+    model_path : STRING
+        Path to find the STL file of the exported object.
+    length : INTEGER, optional
+        Side length in meters. The default value is 60.
+    height : INTEGER, optional
+        Map height in meters. The default value is 2.
+
+    Returns
+    -------
+    None.
+
+    """
+    sdf_model_file_text = \
+    f"""<?xml version='1.0'?>
+        <sdf version="1.6">
+            <model name="{object_name}">
+                <static>1</static>
+                <link name="link">
+                    <visual name="visual">
+                        <geometry>
+                            <mesh>
+                                <uri>{model_path}</uri>
+                                <size>{length} {length} {height}</size>
+                            </mesh>
+                        </geometry>
+                    </visual>
+                    <collision name="collision">
+                        <geometry>
+                            <mesh>
+                                <uri>{model_path}</uri>
+                                <size>{length} {length} {height}</size>
+                            </mesh>
+                        </geometry>
+                    </collision>
+                </link>
+            </model>
+        </sdf>"""
+    # The <visual> component is for rendering graphics and does not affect physics.
+    # The <collision> component determines the physical interaction in the simulation but is not rendered visually.
+    with open(f"{directory}/{object_name}.sdf", "w") as f:
+        f.write(sdf_model_file_text)
+
+
+def exportMesh(pmap, seed, len_side = 60, zrat = 2/60):
+    """
+    This function will export the given map as a 3D object (STL file), with a meaningful name inherited
+    from the construction parameters. It will also write a SDF file.
 
     Parameters
     ----------
@@ -181,18 +245,22 @@ def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
     seed : STRING
         Combined seed written from the seeds of the two superposed perlin noise and
         the eventual density filter, with special formatting "000t1111f2222".
-    height : INTEGER, optional
-        Height of the 3D map in pixel units. The default value is 20.
-    xfile : STRING, optional
-        Exported object format, typically "OBJ" or "COLLADA". The default value is "OBJ".
+    len_side : INTEGER, optional
+        Side length in meters. The default value is 60.
+    zrat : FLOAT, optional
+        Ratio between height and side length. The default value is 2/60.
 
     Returns
     -------
     None.
 
     """
-    heightmap = np.array(pmap)*height
-    size = heightmap.shape[0]
+    # Create a mesh.
+    size = len(pmap)
+    height = int(zrat*size)
+    heightmap = np.array(pmap) * height
+    filename = f"mesh{seed}_h{height}"
+    print(f"Generating mesh with name {filename}...")
     x = np.linspace(0, size, size)
     y = np.linspace(0, size, size)
     x, y = np.meshgrid(x, y)
@@ -211,16 +279,45 @@ def exportMesh(pmap, seed, height = 20, xfile = "OBJ"):
             faces.append([idx1, idx2, idx3])
             faces.append([idx2, idx4, idx3])
     faces = np.array(faces)
-    # Create a mesh.
     mesh = trimesh.Trimesh(vertices = vertices, faces = faces)
-    # Export to OBJ format (or COLLADA with .dae).
-    filename = f"mesh{seed}_h{height}"
-    filename += ".dae" if xfile == "COLLADA" else ".obj"
-    try:
-        mesh.export(filename)
-        print(f"Mesh exported with name {filename}.")
+    # Generate a folder to store the mesh.
+    print("Generating a folder to save the files.")
+    # Generate a folder with the same name as the input file, without its extension.
+    current_path = os.getcwd()
+    directory = os.path.join(current_path, filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    print("\nApplying scale factor...")
+    mesh.apply_scale(scaling = 1.0)
+    print("Merging vertices closer than a pre-set constant...")
+    mesh.merge_vertices()
+    print("Removing duplicate faces...")
+    mesh.update_faces(mesh.unique_faces())
+    print("Making the mesh watertight...")
+    trimesh.repair.fill_holes(mesh)
+    trimesh.repair.fix_normals(mesh)
+    print("\nMesh volume: {}".format(mesh.volume))
+    print("Mesh convex hull volume: {}".format(mesh.convex_hull.volume))
+    print("Mesh bounding box volume: {}".format(mesh.bounding_box.volume))
+    # Export the DAE file.
+    print("\nGenerating the DAE mesh file...")
+    dae_file_path = os.path.join(directory, f"{filename}.dae")
+    try:    
+        trimesh.exchange.export.export_mesh(
+            mesh = mesh,
+            file_obj = dae_file_path,
+            file_type = "dae")
+        print(f"Mesh exported successfully to {dae_file_path}")
+        # Generate the SDF file.
+        print("Generating the SDF file...")
+        WriteSDF(
+            directory = directory,
+            object_name = filename,
+            model_path = dae_file_path,
+            length = len_side,
+            height = int(zrat*len_side))
     except:
-        print("Unable to export object.")
+        print("\nUnable to export object.")
 
 
 class PerlinMap():
@@ -265,10 +362,10 @@ class PerlinMap():
         self.__fig2D = disp2Dmap(self.__pmap, seed)
         disp3Dmap(self.__pmap, seed, self.__height)
     
-    def exportmesh(self, xfile = "OBJ"):
+    def exportmesh(self, len_side = 60):
         seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
         seed += "T" if self.__topo else "F"
-        exportMesh(self.__pmap, seed, self.__height, xfile)
+        exportMesh(self.__pmap, seed, len_side, self.__zrat)
         
     def outperlin(self):
         fig = plt.figure()
