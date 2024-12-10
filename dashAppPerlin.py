@@ -8,23 +8,40 @@ from perlin import generatePerlin
 # Function generPerlin creates the perlin Map
 from perlinMapGen import generPerlin, perlin2map, disp3Dmap
 import pandas as pd
-initSeed1 = None
-initSeed2 = None
+
+
+global_seed1 = None
+global_seed2 = None
+
+def updateSeeds(seed1 = None, seed2 = None):
+    global global_seed1, global_seed2
+
+    if seed1 is not None:
+        global_seed1 = seed1
+    if seed2 is not None:
+        global_seed2 = seed2
+
+    if global_seed1 is None:
+        global_seed1 = np.random.randint(1, 1000)
+    if global_seed2 is None:
+        global_seed2 = np.random.randint(1001, 2000)
+    return global_seed1, global_seed2
+
 initOct1 = 20 # cannot be a non-positive num
 initOct2 = 20
 initSize = 500
-initialX = 100
-initialY = 100
+#initialX = 100
+#initialY = 100
 
 # TODO: update to new Perlin Generator
 #perlinMapGen = generatePerlin(initialSeed, initialOctave)
-perlinMapGen, seed = generPerlin(initSeed1, initSeed2, initOct1, initOct2, initSize)
+perlinMapGen, seed = generPerlin(global_seed1, global_seed2, initOct1, initOct2, initSize)
 map2D, fseed = perlin2map(perlinMapGen)
 map3D = disp3Dmap(map2D, fseed)
 print("Map has been generated")
 fig = px.imshow(perlinMapGen, color_continuous_scale='gray') # assigns the perlin map
 fig2 = px.imshow(map2D, color_continuous_scale= 'gray') # shows the generated perlin map into a 2D Map
-#fig3 = px.imshow(map3D, color_continuous_scale= 'gray')
+fig3 = map3D
 fig.update_layout(
     # Set Title of Graph
     title = {
@@ -46,6 +63,24 @@ fig2.update_layout(
         'yanchor' : 'top'
     },
     coloraxis_showscale = False
+)
+
+fig3.update_layout(
+    title = {
+        'text': "3D Map of Perlin Noise",
+        'y': 0.95,
+        'x' : 0.5,
+        'xanchor' : 'center',
+        'yanchor' : 'top',
+    },
+    scene = dict(
+        aspectratio = dict(x = 1, y = 1, z = 0.5), # Aspect Ratio
+        camera = dict(
+            eye = dict (x = 0.5, y = 0.5, z = 1) # How Close camera is
+        )
+    ),
+    margin = dict(l = 0, r = 0, t = 50, b = 0,),# Controls White Space around graph
+    height = 700 # Controls Height of graph
 )
 
 app = Dash()
@@ -70,7 +105,7 @@ app.layout = html.Div([
             html.Div([
                 html.Label("Seed 1:"),
                 dcc.Input(
-                    id='seed-input-1', type='number', value=initSeed1, step=1,
+                    id='seed-input-1', type='number', value=global_seed1, step=1,
                     placeholder="Enter Seed 1 Value", debounce=True, style={'width': '150px'}
                 )
             ], style={'display': 'flex', 'flexDirection': 'column', 'marginBottom': '10px'}),
@@ -78,7 +113,7 @@ app.layout = html.Div([
             html.Div([
                 html.Label("Seed 2:"),
                 dcc.Input(
-                    id='seed-input-2', type='number', value=initSeed2, step=1,
+                    id='seed-input-2', type='number', value=global_seed2, step=1,
                     placeholder="Enter Seed 2 Value", debounce=True, style={'width': '150px'}
                 )
             ], style={'display': 'flex', 'flexDirection': 'column', 'marginBottom': '10px'}),
@@ -127,7 +162,7 @@ app.layout = html.Div([
                 children=dcc.Graph(id = 'Perlin-Graph', figure = fig),
                 style={'height': '400px', 'width': '400px'}
             ),
-        ], style={'flex': '1'}),
+        ]),
 
         # Second Graph Container
         html.Div([
@@ -137,17 +172,19 @@ app.layout = html.Div([
                 children = dcc.Graph(id = '2D-Perlin-Map', figure = fig2),
                 style={'height': '400px', 'width': '400px'}
             ),
-        ], style = {'flex': '2'}),
+        ]),
 
-        html.Div([
-            dcc.Loading(
-                id = "loading-3",
-                type = "default",
-                children = dcc.Graph(id = '3D-Perlin-Map', figure = map3D),
-                style = {'height': '400px', 'width': '400px'}
-            ),
-        ], style = {'flex' : '3'}),
     ], style={'display': 'flex', 'alignItems': 'flex-start'}),
+
+    html.Div([
+        dcc.Loading(
+            id = "loading-3",
+            type = "default",
+            children = dcc.Graph(id = '3D-Perlin-Map', figure = map3D),
+            style = {'height': '800px', 'width': '80%', 'margin':'0 auto'}
+        ),
+    ], style={'height': '800px'}),
+
 ], style={'padding': '20px'}),
 
 
@@ -155,19 +192,30 @@ app.layout = html.Div([
 # Callback for initial perlin noise
 @callback(
     Output('Perlin-Graph', 'figure'),
+    Output('2D-Perlin-Map', 'figure'),
+    Output('3D-Perlin-Map', 'figure'),
     [
         Input('seed-input-1', 'value',),
         Input('seed-input-2', 'value'),
         Input('octave-input-1', 'value'),
         Input('octave-input-2', 'value'),
         Input('size-input', 'value'),
-    ]
+    ],
+
+    prevent_initial_call=True
 
 )
 def updateGraph(seed1, seed2, oct1, oct2, size):
-    updatedPerlinMap, seed = generPerlin(seed1, seed2, oct1, oct2, size) # Call the function from perlinMapgen.py
-    fig = px.imshow(updatedPerlinMap, color_continuous_scale='gray')
-    fig.update_layout(
+    # Update the global seed vars
+    seed1, seed2 = updateSeeds(seed1, seed2)
+
+    # Call the function from perlinMapgen.py
+    # Creates the Perlin Noise
+    updatedPerlinMap, seed = generPerlin(seed1, seed2, oct1, oct2, size)
+
+    # Creates Perlin Noise
+    fig1 = px.imshow(updatedPerlinMap, color_continuous_scale='gray')
+    fig1.update_layout(
         # Set Title of Graph
         title={
             'text': "Perlin Noise",
@@ -178,39 +226,33 @@ def updateGraph(seed1, seed2, oct1, oct2, size):
         },
         coloraxis_showscale=False  # Remove gradient bar on the side, not needed
     )
-    #print("Map Updated!") # Debug print statement
-    return fig
 
-# Callback for 2D Map
-
-@callback(
-    Output('2D-Perlin-Map', 'figure'),
-    [
-        Input('seed-input-1', 'value', ),
-        Input('seed-input-2', 'value'),
-        Input('octave-input-1', 'value'),
-        Input('octave-input-2', 'value'),
-        Input('size-input', 'value'),
-    ]
-)
-def update2DMap(seed1, seed2, oct1, oct2, size):
-    updatedPerlinMap, seed = generPerlin(seed1, seed2, oct1, oct2, size)
-
-    map2D, fseed = perlin2map(updatedPerlinMap)
-    fig2 = px.imshow(map2D, color_continuous_scale='gray')
-
+    map2D, seed = perlin2map(updatedPerlinMap)
+    fig2 = px.imshow(map2D, color_continuous_scale= 'gray')
     fig2.update_layout(
-        # Set Title of Graph
-        title={
-            'text': "2D Perlin Map",
-            'y': 0.95,
-            'x': 0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'
+        title = {
+            'text' : "2D Perlin Map",
+            'y' : 0.95,
+            'x' : 0.5,
+            'xanchor' : 'center',
+            'yanchor' : 'top'
         },
-        coloraxis_showscale=False  # Remove gradient bar on the side
+        coloraxis_showscale = False
     )
-    return fig2
+
+    fig3 = disp3Dmap(map2D, seed)
+    fig3.update_layout(
+        title = {
+            'text' : "3D Perlin Map",
+            'y' : 0.95,
+            'x' : 0.5,
+            'xanchor' : 'center',
+            'yanchor' : 'top'
+        }
+    )
+
+    #print("Map Updated!") # Debug print statement
+    return fig1, fig2, fig3
 
 #updatePerlinMap(seed)
 
