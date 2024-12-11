@@ -28,15 +28,14 @@ def updateSeeds(seed1 = None, seed2 = None):
         global_seed2 = np.random.randint(1001, 2000)
     return global_seed1, global_seed2
 
-initOct1 = 20 # cannot be a non-positive num
+initOct1 = 20 # cannot be a non-positive num or none
 initOct2 = 20
 initSize = 500
-#initialX = 100
-#initialY = 100
 
 # Start Time Counter
 initStartTime = datetime.now()
 
+# Init Map Generation
 perlinMapGen, seed = generPerlin(global_seed1, global_seed2, initOct1, initOct2, initSize)
 map2D, fseed = perlin2map(perlinMapGen)
 map3D = disp3Dmap(map2D, fseed)
@@ -44,12 +43,18 @@ map3D = disp3Dmap(map2D, fseed)
 # End Time Counter
 initEndTime = datetime.now()
 initTimeTaken = (initEndTime - initStartTime).total_seconds()
-initMessage = f"Map generated with seed {seed} in {initTimeTaken:.2f} seconds."
+initMessage = f"""
+    Map generated with in {initTimeTaken:.2f} seconds.\n
+    **Seed:** {seed}\n
+    **Map Size:** {initSize}\n
+    **Octave 1:** {initOct1}\n
+    **Octave 2:** {initOct2}\n
+    """
 
 print("Map has been generated")
 fig = px.imshow(perlinMapGen, color_continuous_scale='gray') # assigns the perlin map
 fig2 = px.imshow(map2D, color_continuous_scale= 'gray') # shows the generated perlin map into a 2D Map
-fig3 = map3D
+fig3 = map3D # map3D already made into figure in perlinMapGen.py, no need to do imshow
 fig.update_layout(
     # Set Title of Graph
     title = {
@@ -107,11 +112,23 @@ app.layout = html.Div([
     ], style={'marginBottom': '20px'}),
 
     # Message container
-    html.Div(
+    dcc.Markdown(
         id = 'message',
         children = initMessage,
-        style = {'textAlign': 'center', 'marginBottom': '20px', 'fontSize': '16px'}
+        style = {'textAlign': 'left', 'marginBottom': '20px', 'fontSize': '16px'}
     ),
+
+    # Checkbox to enable Advanced Options
+    html.Div([
+        dcc.Checklist(
+            options = [
+                {"label": "Show Advanced Options", "value": "show_advanced"}
+            ],
+            value = [],
+            id = "toggle-advanced",
+            inline = True,
+        )
+    ], style = {'textAlign': 'left', 'marginBottom': '20px'}),
 
     # Generate Random Perlin Map Container
     html.Div([
@@ -122,21 +139,12 @@ app.layout = html.Div([
         dcc.Store(id = 'random-trigger', data = False),
     ], style = {'textAlign' : 'center '}),
 
-    html.Div([
-        dcc.Checklist(
-            options = [
-                {"label": "Show Advanced Options", "value": "show_advanced"}
-            ],
-            value = [],
-            id = "toggle-advanced",
-            inline = True,
-        )
-    ], style = {'textAlign': 'center', 'marginBottom': '20px'}),
-
     # Flex container for input fields and graph
     html.Div([
         # Input Fields Container
-        html.Div([
+        html.Div(
+            id = 'advanced-options',
+            children = [
             # Seed Input 1
             html.Div([
                 html.Label("Seed 1:"),
@@ -315,10 +323,25 @@ def updateGraph(n_clicks, seed1, seed2, oct1, oct2, size, randomTrigger):
     endTime = datetime.now()  # End the timer
     timeTaken = (endTime - startTime).total_seconds()
     print(f"Final seed used in the message: {generSeed}") # debug
-    message = f"Map generated with seed {generSeed} in {timeTaken:.2f} seconds."
+
+    message = f"""
+    Map generated with in {timeTaken:.2f} seconds.\n
+    **Seed:** {generSeed} \n
+    **Map Size:** {size} \n
+    **Octave 1:** {oct1} \n
+    **Octave 2:** {oct2} \n
+    """
 
     return fig1, fig2, fig3, message, randomTrigger
 
+@callback(
+    Output('advanced-options', 'style'),
+    Input('toggle-advanced', 'value')
+)
+def toggleAdvancedOptions(toggle_value):
+    if "show_advanced" in toggle_value:
+        return{'display': 'block', 'marginBottom': '20px', 'textAlign': 'left'}
+    return{'display': 'none'}
 
 #updatePerlinMap(seed)
 
