@@ -1,0 +1,5 @@
+seed1: 20
+seed2: 20
+oct1: 10
+oct2: 20
+size: 500
