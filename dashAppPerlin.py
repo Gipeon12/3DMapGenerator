@@ -478,6 +478,9 @@ def update_graph(rand_n_clicks, man_n_clicks, file_contents, seed1, seed2, oct1,
     # Starts Timer
     start_time = datetime.now()
 
+    # init deafult message
+    upload_message = "Please Upload a File"
+
     # Identify which button was clicked
     ctx = callback_context
     if not ctx.triggered:
