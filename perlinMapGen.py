@@ -6,7 +6,7 @@
 
 # Edited by Jose Martinez-Ponce
 # Date: 12/6/2024
-# Purpose: Allow it function within the Dash App
+# Purpose: Allow it to function within the Dash App
 
 
 from perlin_noise import PerlinNoise
@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import random as rd
 import numpy as np
 import plotly.graph_objects as go
+import plotly.express as px
 import trimesh
 import os
 
@@ -157,12 +158,18 @@ def perlin2map(perlin, density = "medium", topography = False, disparity = False
 
 
 def disp2Dmap(pmap, seed):
-    fig2D = plt.figure()
-    plt.imshow(pmap, cmap='gray')
-    plt.title(f"Map generated from Perlin noise with seed {seed}.")
-    plt.gca().invert_yaxis()
-    plt.show()
-    return fig2D
+    fig = px.imshow(pmap, color_continuous_scale='gray')
+    fig.update_layout(
+        title={
+            'text': f"Map generated from Perlin noise with seed {seed}.",
+            'y': 0.95,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        },
+        coloraxis_showscale=False  # Hide color scale
+    )
+    return fig
 
 
 def disp3Dmap(pmap, seed, height = 20):
@@ -235,7 +242,7 @@ def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
 
 def exportMesh(pmap, seed, len_side = 60, zrat = 2/60):
     """
-    This function will export the given map as a 3D object (STL file), with a meaningful name inherited
+    This function will export the given map as a 3D object (COLLADA file), with a meaningful name inherited
     from the construction parameters. It will also write a SDF file.
 
     Parameters
@@ -322,7 +329,7 @@ def exportMesh(pmap, seed, len_side = 60, zrat = 2/60):
 
 class PerlinMap():
     
-    def __init__(self, size = 600, density = "medium", topography = False, disparity = False, height = 20):
+    def __init__(self, size = 600, seed1 = None, seed2 = None, oct1 = 20, oct2 = 20, density = "medium", topography = False, disparity = False, height = 20):
         """
         Calling the constructor will automatically generate a map based on perlin noise
         from all the given arguments.
@@ -348,19 +355,30 @@ class PerlinMap():
         None.
         """
         self.__size = size
+        self.__seed1 = seed1
+        self.__seed2 = seed2
+        self.__oct1 = oct1
+        self.__oct2 = oct2
         self.__height = height
         self.__zrat = height/size
         self.__dens = density
         self.__topo = topography
         self.__disp = disparity
-        (self.__perlin, self.__seed) = generPerlin(size)
-        (self.__pmap, self.__fseed) = perlin2map(self.__perlin, density, topography, disparity)
+
+    def generate_perlin(self, seed1 = None, seed2 = None, oct1 = 20, oct2 = 20, size = 500):
+        (self.__perlin, self.__seed) = generPerlin(self.__seed1, self.__seed2, self.__oct1, self.__oct2, self.__size)
+        (self.__pmap, self.__fseed) = perlin2map(self.__perlin, self.__dens, self.__topo, self.__disp)
+        return self.__perlin, self.__seed
     
-    def display(self):
+    def display_2d(self):
         seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
         seed += "T" if self.__topo else "F"
-        self.__fig2D = disp2Dmap(self.__pmap, seed)
-        disp3Dmap(self.__pmap, seed, self.__height)
+        return disp2Dmap(self.__pmap, seed)
+
+    def display_3d(self):
+        seed = self.__seed if self.__fseed is None else self.__seed + self.__fseed
+        seed += "T" if self.__topo else "F"
+        return disp3Dmap(self.__pmap, seed, self.__height)
     
     def exportmesh(self, len_side = 60):
         seed = self.__seed if self.__fseed == None else self.__seed+self.__fseed
@@ -374,6 +392,12 @@ class PerlinMap():
         plt.gca().invert_yaxis()
         plt.show()
         return fig
+    def get_seed(self):
+        seed = f"{self.__seed1}t{self.__seed2}"
+        return seed
+
+
+
         
     def __str__(self):
         topo = "ON" if self.__topo else "OFF"
