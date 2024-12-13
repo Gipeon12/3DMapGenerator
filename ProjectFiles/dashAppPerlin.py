@@ -272,6 +272,7 @@ app.layout = html.Div(
             html.Div(
                 id='advanced-options',
                 children=[
+                    # Seed Input 1
                     html.Div([
                         html.Label("Seed 1:"),
                         dcc.Input(
@@ -288,6 +289,7 @@ app.layout = html.Div(
                         'flexDirection': 'column',
                         'marginBottom': '10px'
                     }),
+                    # Seed Input 2
                     html.Div([
                         html.Label("Seed 2:"),
                         dcc.Input(
@@ -304,6 +306,7 @@ app.layout = html.Div(
                         'flexDirection': 'column',
                         'marginBottom': '10px'
                     }),
+                    # Octave 1 Input
                     html.Div([
                         html.Label("Octave 1:"),
                         dcc.Input(
@@ -320,6 +323,7 @@ app.layout = html.Div(
                         'flexDirection': 'column',
                         'marginBottom': '10px'
                     }),
+                    # Octave 2 Input
                     html.Div([
                         html.Label("Octave 2:"),
                         dcc.Input(
@@ -336,6 +340,7 @@ app.layout = html.Div(
                         'flexDirection': 'column',
                         'marginBottom': '10px'
                     }),
+                    # Size Input
                     html.Div([
                         html.Label("Size:"),
                         dcc.Input(
@@ -352,6 +357,7 @@ app.layout = html.Div(
                         'flexDirection': 'column',
                         'marginBottom': '10px'
                     }),
+                    # Generate Perlin Map Button
                     html.Div([
                         html.Button(
                             'Generate Perlin Map',
@@ -377,6 +383,7 @@ app.layout = html.Div(
             ),
 
             html.Div([
+                # Graph 1: Perlin Noise
                 html.Div([
                     dcc.Loading(
                         id="loading-1",
@@ -386,6 +393,7 @@ app.layout = html.Div(
                     ),
                 ], style={'textAlign': 'center', 'margin': '10px'}),
 
+                # Graph 2: 2D Map
                 html.Div([
                     dcc.Loading(
                         id="loading-2",
@@ -404,6 +412,7 @@ app.layout = html.Div(
             'justifyContent': 'center'
         }),
 
+        # Graph 3: 3D Map (can be in separate container)
         html.Div([
             dcc.Loading(
                 id="loading-3",
@@ -478,7 +487,6 @@ def update_graph(rand_n_clicks, man_n_clicks, file_contents, seed1, seed2, oct1,
     # Starts Timer
     start_time = datetime.now()
 
-    # init deafult message
     upload_message = "Please Upload a File"
 
     # Identify which button was clicked
