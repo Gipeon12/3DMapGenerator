@@ -225,7 +225,7 @@ def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
 
 def exportMesh(pmap, seed, len_side = 60, zrat = 2/60):
     """
-    This function will export the given map as a 3D object (STL file), with a meaningful name inherited
+    This function will export the given map as a 3D object (COLLADA file), with a meaningful name inherited
     from the construction parameters. It will also write a SDF file.
 
     Parameters
