@@ -4,9 +4,12 @@
 # from a set of parameters given in the constructor of a dedicated class. Different options are
 # available as well as 2D/3D outputs and mesh exportation.
 
+
 # Edited by Jose Martinez-Ponce
 # Date: 12/6/2024
 # Purpose: Allow it to function within the Dash App
+=======
+
 
 
 from perlin_noise import PerlinNoise
@@ -208,7 +211,32 @@ def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
     -------
     None.
 
+
     """
+=======
+def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
+    """
+    This function is meant to write a basic SDF file for a given object.
+
+    Parameters
+    ----------
+    directory : STRING
+        DESCRIPTION.
+    object_name : STRING
+        Name used to save the exported object.
+    model_path : STRING
+        Path to find the STL file of the exported object.
+    length : INTEGER, optional
+        Side length in meters. The default value is 60.
+    height : INTEGER, optional
+        Map height in meters. The default value is 2.
+
+    Returns
+    -------
+    None.
+
+    """
+
     sdf_model_file_text = \
     f"""<?xml version='1.0'?>
         <sdf version="1.6">
