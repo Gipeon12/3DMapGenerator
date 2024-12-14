@@ -8,20 +8,18 @@ from FileProcess import PerlinFile
 
 # Test 1: File I/O
 def test_file_reading():
-    file_content = """seed1:11
-    seed2: 21
-    oct1: 1
-    oct2: 14
-    size: 300"""
-
+    
+    with open('exampleInput.txt', 'r') as file:
+        file_content = file.read()
+    
     processor = PerlinFile(file_content)
     params = processor.read_file()
     assert params == {
-        "seed1": 11,
-        "seed2": 21,
-        "oct1": 1,
-        "oct2": 14,
-        "size": 300
+        "seed1": 20,
+        "seed2": 20,
+        "oct1": 10,
+        "oct2": 20,
+        "size": 500
     }
 
 

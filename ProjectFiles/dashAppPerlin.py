@@ -612,7 +612,7 @@ def update_graph(rand_n_clicks, man_n_clicks, file_contents, seed1, seed2, oct1,
 )
 def toggle_advanced_options(toggle_value):
     if "show_advanced" in toggle_value:
-        return{'display': 'block', 'marginBottom': '20px', 'textAlign': 'left'}
+        return{'display': 'block', 'marginBottom': '20px', 'marginLeft': '100px', 'textAlign': 'left'}
     return{'display': 'none'}
 
 

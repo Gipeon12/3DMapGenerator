@@ -8,7 +8,6 @@
 # Edited by Jose Martinez-Ponce
 # Date: 12/6/2024
 # Purpose: Allow it to function within the Dash App
-=======
 
 
 
@@ -211,30 +210,6 @@ def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
     -------
     None.
 
-
-    """
-=======
-def WriteSDF(directory, object_name, model_path, length = 60, height = 2):
-    """
-    This function is meant to write a basic SDF file for a given object.
-
-    Parameters
-    ----------
-    directory : STRING
-        DESCRIPTION.
-    object_name : STRING
-        Name used to save the exported object.
-    model_path : STRING
-        Path to find the STL file of the exported object.
-    length : INTEGER, optional
-        Side length in meters. The default value is 60.
-    height : INTEGER, optional
-        Map height in meters. The default value is 2.
-
-    Returns
-    -------
-    None.
-
     """
 
     sdf_model_file_text = \
@@ -337,22 +312,22 @@ def exportMesh(pmap, seed, len_side = 60, zrat = 2/60):
     # Export the DAE file.
     print("\nGenerating the DAE mesh file...")
     dae_file_path = os.path.join(directory, f"{filename}.dae")
-    try:    
-        trimesh.exchange.export.export_mesh(
-            mesh = mesh,
-            file_obj = dae_file_path,
-            file_type = "dae")
-        print(f"Mesh exported successfully to {dae_file_path}")
-        # Generate the SDF file.
-        print("Generating the SDF file...")
-        WriteSDF(
-            directory = directory,
-            object_name = filename,
-            model_path = dae_file_path,
-            length = len_side,
-            height = int(zrat*len_side))
-    except:
-        print("\nUnable to export object.")
+    #try:    
+    trimesh.exchange.export.export_mesh(
+        mesh = mesh,
+        file_obj = dae_file_path,
+        file_type = "dae")
+    print(f"Mesh exported successfully to {dae_file_path}")
+    # Generate the SDF file.
+    print("Generating the SDF file...")
+    WriteSDF(
+        directory = directory,
+        object_name = filename,
+        model_path = dae_file_path,
+        length = len_side,
+        height = int(zrat*len_side))
+    #except:
+    #    print("\nUnable to export object.")
 
 
 class PerlinMap():
@@ -366,6 +341,10 @@ class PerlinMap():
         ----------
         size : INTEGER, optional
             Size of the square map in pixels. The default value is 600.
+        seed1, seed2 : INTEGER, optional
+            Seeds used to generate Perlin noises. Default value is None.
+        oct1, oct2 : INTEGER, optional
+            Number of octaves (level of details) used to generate Perlin noises. Default value is 20.
         density : STRING (Default) or FLOAT, optional
             Density option label (low = "sparse", "medium", high = "dense").
             The default option is "medium".        
